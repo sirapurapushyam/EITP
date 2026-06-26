@@ -105,7 +105,7 @@ export default function LoginPage() {
         >
           {submitting ? "Signing in..." : "Sign in"}
         </button>
-        <div className="my-5 flex items-center">
+        {/* <div className="my-5 flex items-center">
           <div className="h-px flex-1 bg-slate-300" />
 
           <span className="mx-4 text-sm">OR</span>
@@ -116,7 +116,7 @@ export default function LoginPage() {
         <GoogleLogin
           onSuccess={handleGoogle}
           onError={() => toast.error("Google Login Failed")}
-        />
+        /> */}
       </form>
 
       <div className="mt-5 flex items-center justify-between text-sm text-slate-600">

@@ -32,7 +32,6 @@ function RoleRedirect() {
 
 
 export default function App() {
-console.log(import.meta.env.VITE_GOOGLE_CLIENT_ID);
 
 
   const dispatch = useDispatch();
@@ -88,11 +87,11 @@ useEffect(() => {
     const socket = connectSocket();
 
     socket.on("connect", () => {
-      console.log("✅ Socket connected:", socket.id);
+      console.log("Socket connected:", socket.id);
     });
 
     socket.on("connect_error", (err) => {
-      console.log("❌ Socket error:", err.message);
+      console.log("Socket error:", err.message);
     });
 
     socket.on("disconnect", (reason) => {

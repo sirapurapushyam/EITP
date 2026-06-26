@@ -62,8 +62,6 @@ export function initSocket(server) {
 
         const userId = user.sub;
 
-        console.log("Connected :", userId);
-        console.log("Socket User:", user);
 
         /*
         -----------------------------------

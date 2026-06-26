@@ -285,7 +285,7 @@ const onSubmit = async (values) => {
         >
           Register
         </button>
-        <div className="my-5 flex items-center">
+        {/* <div className="my-5 flex items-center">
           <div className="h-px flex-1 bg-slate-300" />
 
           <span className="mx-4 text-sm">OR</span>
@@ -296,7 +296,7 @@ const onSubmit = async (values) => {
         <GoogleLogin
           onSuccess={handleGoogle}
           onError={() => toast.error("Google Login Failed")}
-        />
+        /> */}
       </form>
 
       <div className="mt-4 text-sm text-slate-600">
