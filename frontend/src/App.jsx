@@ -30,7 +30,10 @@ function RoleRedirect() {
   return <Navigate to="/student" replace />;
 }
 
+
 export default function App() {
+console.log(import.meta.env.VITE_GOOGLE_CLIENT_ID);
+
 
   const dispatch = useDispatch();
   
@@ -117,6 +120,7 @@ useEffect(() => {
 
   return (
   <>
+  
 
     <Toaster
       position="top-right"
