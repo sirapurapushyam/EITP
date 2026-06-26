@@ -1,11 +1,12 @@
 import { OAuth2Client } from "google-auth-library";
 import { env } from "../config/env.js";
 
-console.log("GOOGLE_CLIENT_ID:", env.GOOGLE_CLIENT_ID);
 
 const client = new OAuth2Client(env.GOOGLE_CLIENT_ID);
 
 export async function verifyGoogleToken(idToken) {
+console.log("GOOGLE_CLIENT_ID:", env.GOOGLE_CLIENT_ID);
+
 
   const ticket = await client.verifyIdToken({
     idToken,
