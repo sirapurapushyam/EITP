@@ -14,7 +14,16 @@ import {
   revokeAllRefreshTokens
 } from './token.service.js';
 import { sendPasswordResetLink } from './mail.service.js';
+import { verifyGoogleToken } from "./google.service.js";
 
+function createTokenPayload(user) {
+  return {
+    sub: user._id,
+    name: user.name,
+    role: user.role,
+    campus: user.campus
+  };
+}
 export async function registerStudent(payload) {
   const existingUser = await User.findOne({
   $or: [
@@ -49,22 +58,32 @@ if (existingUser) {
   });
 }
 
+
+
 export async function login({ loginId, password }, meta = {}) {
   const user = await User.findOne({
     $or: [
       { collegeEmail: loginId.toLowerCase() },
       { personalEmail: loginId.toLowerCase() }
     ]
-  }).select('+password');
+  }).select("+password");
 
   if (!user) {
-    throw new ApiError(401, 'Invalid credentials');
+    throw new ApiError(401, "Invalid credentials");
+  }
+
+  // Google account without a password
+  if (!user.password) {
+    throw new ApiError(
+      400,
+      "This account doesn't have a password yet. Please sign in with Google."
+    );
   }
 
   const matched = await user.comparePassword(password);
 
   if (!matched) {
-    throw new ApiError(401, 'Invalid credentials');
+    throw new ApiError(401, "Invalid credentials");
   }
 
   if (
@@ -73,16 +92,11 @@ export async function login({ loginId, password }, meta = {}) {
   ) {
     throw new ApiError(
       403,
-      'Coordinator account is awaiting approval'
+      "Coordinator account is awaiting approval"
     );
   }
 
- const tokenPayload = {
-  sub: user._id,
-  name: user.name,
-  role: user.role,
-  campus: user.campus
-};
+  const tokenPayload = createTokenPayload(user);
 
 const accessToken = signAccessToken(tokenPayload);
 
@@ -116,12 +130,7 @@ export async function refresh(refreshToken) {
     throw new ApiError(401, 'Refresh token revoked');
   }
 
- const tokenPayload = {
-  sub: user._id,
-  name: user.name,
-  role: user.role,
-  campus: user.campus
-};
+ const tokenPayload = createTokenPayload(user);
 
 const newAccessToken = signAccessToken(tokenPayload);
 
@@ -230,4 +239,175 @@ export async function updateProfile(userId, updates) {
   const user = await User.findByIdAndUpdate(userId, payload, { new: true });
   if (!user) throw new ApiError(404, 'User not found');
   return user;
+}
+
+
+export async function googleLogin(idToken, meta = {}) {
+
+  const googleUser = await verifyGoogleToken(idToken);
+
+  if (!googleUser.emailVerified) {
+    throw new ApiError(
+      400,
+      "Google email is not verified"
+    );
+  }
+
+  let user = await User.findOne({
+    personalEmail: googleUser.email.toLowerCase()
+  }).select("+password");
+
+  /*
+    Existing User
+  */
+  if (user) {
+
+    // Link Google account if not linked already
+    if (!user.googleId) {
+  user.googleId = googleUser.googleId;
+  await user.save();
+}
+
+    // If profile isn't complete yet
+    if (!user.profileCompleted) {
+
+      return {
+        profileCompleted: false,
+        user: user.toJSON()
+      };
+
+    }
+
+    const tokenPayload = createTokenPayload(user);
+
+const accessToken = signAccessToken(tokenPayload);
+
+const refreshToken = signRefreshToken(tokenPayload);
+
+    await storeRefreshToken(
+      user,
+      refreshToken,
+      meta
+    );
+
+    return {
+      profileCompleted: true,
+      user: user.toJSON(),
+      accessToken,
+      refreshToken
+    };
+
+  }
+
+  /*
+    New User
+  */
+
+user = await User.create({
+  name: googleUser.name,
+  personalEmail: googleUser.email.toLowerCase(),
+
+  googleId: googleUser.googleId,
+
+  password: null,
+
+  profileCompleted: false,
+
+  approved: true
+});
+
+  return {
+
+    profileCompleted: false,
+
+    user: user.toJSON()
+
+  };
+
+}
+
+
+export async function completeGoogleProfile(
+  userId,
+  payload,
+  meta = {}
+) {
+
+  const user = await User.findById(userId).select("+password");
+
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  if (user.profileCompleted) {
+    throw new ApiError(
+      400,
+      "Profile already completed"
+    );
+  }
+
+  // Check duplicates
+  const existing = await User.findOne({
+    _id: { $ne: user._id },
+    $or: [
+      { studentId: payload.studentId },
+      { collegeEmail: payload.collegeEmail?.toLowerCase() }
+    ]
+  });
+
+  if (existing) {
+    throw new ApiError(
+      409,
+      "Student ID or College Email already exists"
+    );
+  }
+
+  user.phone = payload.phone;
+  user.studentId = payload.studentId;
+  user.collegeEmail =
+    payload.collegeEmail?.toLowerCase();
+
+  user.campus = payload.campus;
+  user.branch = payload.branch;
+  user.yearOfStudy = payload.yearOfStudy;
+
+  user.batchYear = payload.batchYear;
+  user.passedOutYear = payload.passedOutYear;
+
+  user.linkedinProfile =
+    payload.linkedinProfile || "";
+
+  user.githubProfile =
+    payload.githubProfile || "";
+
+  user.skills = payload.skills || [];
+
+if (payload.password) {
+  user.password = payload.password;
+}
+
+  user.role = ROLES.STUDENT;
+
+  user.profileCompleted = true;
+
+  await user.save();
+
+  const tokenPayload = createTokenPayload(user);
+
+const accessToken = signAccessToken(tokenPayload);
+
+const refreshToken = signRefreshToken(tokenPayload);
+
+  await storeRefreshToken(
+    user,
+    refreshToken,
+    meta
+  );
+
+  return {
+    user: user.toJSON(),
+    accessToken,
+    refreshToken
+  };
+
 }

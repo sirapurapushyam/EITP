@@ -20,6 +20,7 @@ initializeSocket
 }
 from "./features/chat/socketListeners";
 import { Toaster } from "react-hot-toast";
+import GoogleCompleteProfile from "./pages/auth/GoogleCompleteProfile";
 function RoleRedirect() {
   const user = useSelector(selectCurrentUser);
   if (!user) return <Navigate to="/login" replace />;
@@ -60,22 +61,47 @@ export default function App() {
 
   }, []);
 
-  useEffect(() => {
+//   useEffect(() => {
 
-    if (user) {
+//     if (user) {
 
-      connectSocket();
-      initializeSocket(
-dispatch
-);
+//       connectSocket();
+//       initializeSocket(
+// dispatch
+// );
 
-    } else {
+//     } else {
 
-      disconnectSocket();
+//       disconnectSocket();
 
-    }
+//     }
 
-  }, [user]);
+//   }, [user]);
+
+
+
+useEffect(() => {
+  if (user) {
+    const socket = connectSocket();
+
+    socket.on("connect", () => {
+      console.log("✅ Socket connected:", socket.id);
+    });
+
+    socket.on("connect_error", (err) => {
+      console.log("❌ Socket error:", err.message);
+    });
+
+    socket.on("disconnect", (reason) => {
+      console.log("Disconnected:", reason);
+    });
+
+    initializeSocket(dispatch);
+  } else {
+    disconnectSocket();
+  }
+}, [user]);
+
   useEffect(() => {
 
   if (
@@ -126,6 +152,10 @@ dispatch
         path="/reset-password/:token"
         element={<ResetPasswordPage />}
       />
+      <Route
+  path="/complete-profile"
+  element={<GoogleCompleteProfile />}
+/>
 
       <Route
         path="/app"

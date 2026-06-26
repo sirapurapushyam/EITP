@@ -72,6 +72,34 @@ export const logoutUser = createAsyncThunk(
   }
 );
 
+export const googleLogin = createAsyncThunk(
+  "auth/googleLogin",
+
+  async (credential, { rejectWithValue }) => {
+
+    try {
+
+      const { data } = await api.post(
+        "/auth/google",
+        {
+          credential
+        }
+      );
+
+      return data;
+
+    } catch (error) {
+
+      return rejectWithValue(
+        error.response?.data?.message ||
+        "Google Login Failed"
+      );
+
+    }
+
+  }
+);
+
 const authSlice = createSlice({
   name: 'auth',
   initialState,
@@ -115,6 +143,7 @@ const authSlice = createSlice({
 
         state.user = action.payload.user;
         state.accessToken = action.payload.accessToken;
+         state.initialized = true;
 
         localStorage.setItem(
           'eitp_access_token',
@@ -159,6 +188,27 @@ const authSlice = createSlice({
   state.user = null;
   state.initialized = true;
 })
+.addCase(
+  googleLogin.fulfilled,
+  (state, action) => {
+
+    if (action.payload.profileCompleted) {
+
+      state.user = action.payload.user;
+
+      state.accessToken =
+        action.payload.accessToken;
+         state.initialized = true;
+
+      localStorage.setItem(
+        "eitp_access_token",
+        action.payload.accessToken
+      );
+
+    }
+
+  }
+)
 
       // LOGOUT
       .addCase(logoutUser.fulfilled, (state) => {

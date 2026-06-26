@@ -6,6 +6,8 @@ import { useDispatch } from 'react-redux';
 import { registerUser } from '../../features/auth/authSlice.js';
 import AuthLayout from '../../components/layout/AuthLayout.jsx';
 import { FiEye, FiEyeOff } from 'react-icons/fi';
+import { GoogleLogin } from "@react-oauth/google";
+import { googleLogin } from "../../features/auth/authSlice";
 
 export default function RegisterPage() {
   const navigate = useNavigate();
@@ -17,7 +19,25 @@ export default function RegisterPage() {
   handleSubmit,
   formState: { errors }
 } = useForm();
+ const handleGoogle = async (credentialResponse) => {
+    const result = await dispatch(googleLogin(credentialResponse.credential));
 
+    if (googleLogin.fulfilled.match(result)) {
+      if (result.payload.profileCompleted) {
+        toast.success("Welcome " + result.payload.user.name);
+
+        navigate("/student");
+      } else {
+        navigate("/complete-profile", {
+          state: {
+            user: result.payload.user,
+          },
+        });
+      }
+    } else {
+      toast.error(result.payload);
+    }
+  };
 const onSubmit = async (values) => {
   const {
     confirmPassword,
@@ -265,6 +285,18 @@ const onSubmit = async (values) => {
         >
           Register
         </button>
+        <div className="my-5 flex items-center">
+          <div className="h-px flex-1 bg-slate-300" />
+
+          <span className="mx-4 text-sm">OR</span>
+
+          <div className="h-px flex-1 bg-slate-300" />
+        </div>
+
+        <GoogleLogin
+          onSuccess={handleGoogle}
+          onError={() => toast.error("Google Login Failed")}
+        />
       </form>
 
       <div className="mt-4 text-sm text-slate-600">

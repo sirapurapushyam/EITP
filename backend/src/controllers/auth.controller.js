@@ -1,6 +1,17 @@
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiError } from '../utils/apiError.js';
-import { login, registerStudent, refresh, logout, forgotPassword, resetPassword, changePassword, updateProfile } from '../services/auth.service.js';
+import {
+  login,
+  registerStudent,
+  refresh,
+  logout,
+  forgotPassword,
+  resetPassword,
+  changePassword,
+  updateProfile,
+  googleLogin,
+  completeGoogleProfile
+} from '../services/auth.service.js';
 
 function setAuthCookies(res, payload) {
   const cookieOptions = { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax' };
@@ -17,6 +28,41 @@ export const signIn = asyncHandler(async (req, res) => {
   const result = await login(req.body, { userAgent: req.headers['user-agent'], ipAddress: req.ip });
   setAuthCookies(res, result);
   res.json({ success: true, ...result });
+});
+
+export const googleSignIn = asyncHandler(async (req, res) => {
+
+  const result = await googleLogin(
+    req.body.credential,
+    {
+      userAgent: req.headers["user-agent"],
+      ipAddress: req.ip
+    }
+  );
+
+  // Existing user
+  if (result.profileCompleted) {
+
+    setAuthCookies(res, result);
+
+    return res.json({
+      success: true,
+      ...result
+    });
+
+  }
+
+  // New Google user
+  return res.status(200).json({
+
+    success: true,
+
+    profileCompleted: false,
+
+    user: result.user
+
+  });
+
 });
 
 export const signOut = asyncHandler(async (req, res) => {
@@ -68,4 +114,27 @@ export const profile = asyncHandler(async (req, res) => {
 
 export const me = asyncHandler(async (req, res) => {
   res.json({ success: true, data: req.user });
+});
+
+export const completeGoogleSignup =
+  asyncHandler(async (req, res) => {
+
+    const result =
+      await completeGoogleProfile(
+        req.body.userId,
+        req.body,
+        {
+          userAgent:
+            req.headers["user-agent"],
+          ipAddress: req.ip
+        }
+      );
+
+    setAuthCookies(res, result);
+
+    res.json({
+      success: true,
+      ...result
+    });
+
 });

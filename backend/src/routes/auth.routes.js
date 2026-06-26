@@ -14,6 +14,15 @@ const router = Router();
 
 router.post('/register', validate(registerStudentSchema), auth.register);
 router.post('/login', validate(loginSchema), auth.signIn);
+router.post(
+  "/google",
+  auth.googleSignIn
+);
+
+router.post(
+  "/google/complete-profile",
+  auth.completeGoogleSignup
+);
 router.post('/logout', requireAuth, auth.signOut);
 router.post('/refresh', auth.refreshToken);
 router.post('/forgot-password', validate(forgotPasswordSchema), auth.forgot);

@@ -148,7 +148,8 @@ export default function StudentProfileForm() {
       </div>
 
     </form>
-     <ChangePasswordForm />
+
+  <ChangePasswordForm />
     </>
   );
 }

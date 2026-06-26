@@ -20,7 +20,8 @@ const schema = z.object({
   SMTP_PORT: z.coerce.number().optional().default(587),
   SMTP_USER: z.string().optional().default(''),
   SMTP_PASS: z.string().optional().default(''),
-  SMTP_FROM: z.string().optional().default('EITP System <no-reply@eitp.local>')
+  SMTP_FROM: z.string().optional().default('EITP System <no-reply@eitp.local>'),
+  GOOGLE_CLIENT_ID: z.string().min(1),
 });
 
 export const env = schema.parse(process.env);
